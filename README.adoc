@@ -1,0 +1,9 @@
+= Tagger
+
+Little tool to listen on Inventory events.
+
+If a metric with a certain match is found, the tool
+will put a tag into the corresponding metric definition.
+
+This way it is e.g. possible to put a certain tag on
+ all metrics matching "Heap Used"
