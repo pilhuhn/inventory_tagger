@@ -1,3 +1,5 @@
+#!/usr/local/bin/ruby
+
 require 'hawkular/hawkular_client'
 
 class Inventory_Tagger
@@ -5,11 +7,12 @@ class Inventory_Tagger
   def run
     creds = {:username => 'jdoe', :password => 'password'}
 
+    remote_host = ENV['HOST'] || 'localhost'
 
     hash = {}
     hash[:credentials] = creds
     hash[:options] = { :tenant => 'hawkular' }
-    hash[:entrypoint] = 'http://localhost:8080'
+    hash[:entrypoint] = "http://#{remote_host}:8080"
 
     client = ::Hawkular::Client.new(hash)
 
@@ -37,13 +40,19 @@ class Inventory_Tagger
     md = ep.get id
 
     if md.nil?
+      puts 'MetricDefinition did not yet exist'
       md = ::Hawkular::Metrics::MetricDefinition.new
+    end
+
+    if md.id.nil?
+      puts 'MetricDefinition\'s id was nil - definition probably did not exist'
       md.id = id
     end
 
     md.tags ||= { :heap => :used}
 
-    ep.update_tags md
+    res = ep.update_tags md
+    puts "Received #{res}"
   end
 
   def metric_endpoint(client, inv_metric)
