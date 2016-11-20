@@ -7,3 +7,18 @@ will put a tag into the corresponding metric definition.
 
 This way it is e.g. possible to put a certain tag on
  all metrics matching "Heap Used"
+
+== Docker build
+
+run `build.sh`
+
+== Running
+
+You may want to set the credentials in `inventory_tagger.rb`.
+Default is _jdoe_/_password_
+
+[source,bash]
+----
+export HOST=1.2.3.4 # Host of Hawkular server if != localhost
+ruby inventory_tagger.rb
+----
