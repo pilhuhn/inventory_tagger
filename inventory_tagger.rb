@@ -14,7 +14,14 @@ class Inventory_Tagger
     hash[:options] = { :tenant => 'hawkular' }
     hash[:entrypoint] = "http://#{remote_host}:8080"
 
-    client = ::Hawkular::Client.new(hash)
+    begin
+      client = ::Hawkular::Client.new(hash)
+      client.inventory.fetch_version_and_status
+    rescue => e
+      puts "Server not yet ready: #{e.message}"
+      sleep 1
+      retry
+    end
 
     client.inventory.events(type = 'metric') do |metric|
 
