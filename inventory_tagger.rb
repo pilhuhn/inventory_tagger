@@ -2,6 +2,11 @@
 
 require 'hawkular/hawkular_client'
 
+MATCH_TAG_PAIRS = { '~Heap Used'   => { :heap => :used},
+                    '~NonHeap Used' => {:non_heap => :used},
+                    '~Thread Count' => {:thread => :count}
+}
+
 class Inventory_Tagger
 
   def run
@@ -19,17 +24,17 @@ class Inventory_Tagger
       client.inventory.fetch_version_and_status
     rescue => e
       puts "Server not yet ready: #{e.message}"
-      sleep 1
+      sleep 0.5
       retry
     end
 
     client.inventory.events(type = 'metric') do |metric|
-
-      if metric.id.include? '~Heap Used'
-        puts "Found #{metric.id}"
-        do_tag client, metric
+      MATCH_TAG_PAIRS.keys.each do |key|
+        if metric.id.include? key
+          puts "Found #{metric.id}"
+          do_tag client, metric, MATCH_TAG_PAIRS[key]
+        end
       end
-
     end
 
     puts 'Started ...'
@@ -39,7 +44,7 @@ class Inventory_Tagger
 
   end
 
-  def do_tag(client, inv_metric)
+  def do_tag(client, inv_metric, tag)
 
     ep = metric_endpoint client, inv_metric
     id = inv_metric.hawkular_metric_id
@@ -56,7 +61,7 @@ class Inventory_Tagger
       md.id = id
     end
 
-    md.tags ||= { :heap => :used}
+    md.tags ||= tag
 
     res = ep.update_tags md
     puts "Received #{res}"
