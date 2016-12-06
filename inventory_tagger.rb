@@ -1,6 +1,7 @@
 #!/usr/local/bin/ruby
 
 require 'hawkular/hawkular_client'
+require 'hawkular/hawkular_client_utils'
 
 MATCH_TAG_PAIRS = { '~Heap Used'   => { :heap => :used},
                     '~NonHeap Used' => {:non_heap => :used},
@@ -8,6 +9,8 @@ MATCH_TAG_PAIRS = { '~Heap Used'   => { :heap => :used},
 }
 
 class Inventory_Tagger
+
+  include HawkularUtilsMixin
 
   def run
     creds = {:username => 'jdoe', :password => 'password'}
@@ -38,6 +41,24 @@ class Inventory_Tagger
     end
 
     puts 'Started ...'
+
+    # Now fetch metrics that may have been created before this was starting
+    feeds = client.inventory.list_feeds
+    feeds.each do |feed|
+      # type = Hawkular::Inventory::CanonicalPath.new(resource_type_id: hawk_escape_id('WildFly Memory Metrics~Heap Used')).to_s
+      type = Hawkular::Inventory::CanonicalPath.new(feed_id: feed,
+                                                    resource_type_id: hawk_escape_id('WildFly Server')).to_s
+      metrics = client.inventory.list_metrics_for_resource_type type
+      metrics.each do | metric |
+        MATCH_TAG_PAIRS.keys.each do |key|
+          if metric.id.include? key
+            puts "Found #{metric.id}"
+            do_tag client, metric, MATCH_TAG_PAIRS[key]
+          end
+        end
+      end
+    end
+
     while true do
       sleep 0.5
     end
